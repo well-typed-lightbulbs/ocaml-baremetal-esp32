@@ -15,7 +15,12 @@ DEPS=app/payload.o esp_bootloader/libboot.a ocaml-esp32/asmrun/libasmrun.a ocaml
 
 OPAM_SWITCH_ROOT=$(shell opam config var prefix)
 
-app.elf: $(DEPS)
+all: app.elf
+
+linker.ld: linker.ld.in
+	gcc -E -x c $< | grep -v '^#' > $@
+
+app.elf: $(DEPS) linker.ld
 	$(LD) $(LDFLAGS) -T linker.ld -T rom.ld $(DEPS) -o $@
 
 app.bin: app.elf

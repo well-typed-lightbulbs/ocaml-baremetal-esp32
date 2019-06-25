@@ -1,36 +1,50 @@
+/*
+Linker file used to link the bootloader.
+*/
+
+
+/* Simplified memory map for the bootloader
+
+   The main purpose is to make sure the bootloader can load into main memory
+   without overwriting itself.
+*/
+
+#define STACK_SIZE      0x2000  /* 8KB stack */
+#define RAM1_SPLIT_DATA 0x20000 /* 128KB of RAM1 used for data */
+
 _heap_end = 0x40000000;
 
 MEMORY
 {
+  /* IRAM0 POOL0, used for PRO CPU cache. */
+  iram_0_cache_0 (RX) :           org = 0x40070000, len = 0x8000
 
-  iram_0_cache_0 (RX) : org = 0x40070000, len = 0x8000
+  /* IRAM0 POOL1, used for APP CPU cache.
+    Bootloader runs from here during the final stage of loading the app because
+    APP CPU is still held in reset, the main app enables APP CPU cache */
+  iram_0_cache_1 (RX) :           org = 0x40078000, len = 0x8000
 
+  /* IRAM0 128k */
+  iram_0 (RX) :                 org = 0x40080000, len = 0x20000
 
+  /* IRAM1 128k */
+  iram_1 (RX) :                 org = 0x400A0000, len = 0x20000 - RAM1_SPLIT_DATA
 
+  /* IFlash - the offset is for convenience (0x18 byte file header) */
+  iflash (RX) :                 org = 0x400D0018, len = 0x330000-0x18
 
-  iram_0_cache_1 (RX) : org = 0x40078000, len = 0x8000
+  /* DRAM1 128k (= IRAM1, we need to properly split the two) */
+  dram_1 (RW) :                 org = 0x3FFE0000, len = RAM1_SPLIT_DATA
 
+  /* DRAM2 200k -- static ROM usage at the 178kb mark*/
+  dram_2 (RW) :                 org = 0x3FFAE000 + STACK_SIZE, len = 0x2e200 - STACK_SIZE
+  dram_2_miss (R):              org = 0x3FFDC200, len = 0x3e00
 
-  iram_0 (RX) : org = 0x40080000, len = 0x20000
-
-
-  iram_1 (RX) : org = 0x400A0000, len = 0x20000 - 0x20000
-
-
-  iflash (RX) : org = 0x400D0018, len = 0x330000-0x18
-
-
-  dram_1 (RW) : org = 0x3FFE0000, len = 0x20000
-
-
-  dram_2 (RW) : org = 0x3FFAE000 + 0x2000, len = 0x2e200 - 0x2000
-  dram_2_miss (R): org = 0x3FFDC200, len = 0x3e00
-
-
-  dflash (R) : org = 0x3F400018, len = 0x400000-0x18
+  /* DFlash */
+  dflash (R) :                  org = 0x3F400018, len = 0x400000-0x18
 }
 
-
+/*  Default entry point:  */
 ENTRY(call_start_cpu0);
 
 
@@ -42,7 +56,7 @@ SECTIONS
     . = ALIGN (16);
     _loader_text_start = ABSOLUTE(.);
     *(.stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
-     *(.iram1 .iram1.*)
+     *(.iram1 .iram1.*) /* catch stray IRAM_ATTR */
     *(.fini.literal)
     *(.fini)
     *(.gnu.version)
@@ -58,7 +72,7 @@ SECTIONS
   } > iram_0
 
 
-
+  /* Shared RAM */
   .dram0.bss (NOLOAD) :
   {
     . = ALIGN (8);
@@ -112,7 +126,7 @@ SECTIONS
     *(.eh_frame)
     . = (. + 3) & ~ 3;
     _rodata_end = ABSOLUTE(.);
-
+	/* Literals are also RO data. */
     _lit4_start = ABSOLUTE(.);
     *(*.lit4)
     *(.lit4.*)
@@ -127,7 +141,7 @@ SECTIONS
     _stext = .;
     _text_start = ABSOLUTE(.);
     *(.literal .text .literal.* .text.* .stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
-    *(.iram .iram.*)
+    *(.iram .iram.*) /* catch stray IRAM_ATTR */
     *(.fini.literal)
     *(.fini)
     *(.gnu.version)

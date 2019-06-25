@@ -40,3 +40,13 @@ OCaml application payload.
 
 ESP32 has a JTAG interface that you can use to debug the processor with `gdb`. For ESP-WROVER kits it's JTAG over USB, so you don' need another cable.
 For more information: https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/
+
+# Binary size
+
+* payload: 79676
+* nolibc:  41548
+* asmrun:  86462
+* libcc:   24241
+* libm:   119727
+
+* app.elf:  167814 (with --gc-sections)
