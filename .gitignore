@@ -1,0 +1,7 @@
+*.o
+*.cmx
+*.cmi
+*.a
+*.swp
+app.bin
+app.elf

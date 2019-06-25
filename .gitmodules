@@ -1,0 +1,8 @@
+[submodule "ocaml-esp32"]
+	path = ocaml-esp32
+	url = git@github.com:well-typed-lightbulbs/ocaml-esp32.git
+	branch = 4.07-esp32+lto
+[submodule "ocaml-freestanding"]
+	path = ocaml-freestanding
+	url = git@github.com:TheLortex/ocaml-freestanding.git
+	branch = bare-esp32
